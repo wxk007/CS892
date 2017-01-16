@@ -69,6 +69,7 @@ public class PalantiriManager {
         // in a thread-safe manner.
         // TODO -- you fill in here.
 
+
         // Do a simple sanity check!
         if (palantir != null) {
             // Hold the intrinsic lock for the duration of this call

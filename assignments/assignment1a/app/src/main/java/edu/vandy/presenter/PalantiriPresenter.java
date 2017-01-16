@@ -3,6 +3,8 @@ package edu.vandy.presenter;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import android.content.Intent;
 import android.util.Log;
@@ -45,6 +47,7 @@ public class PalantiriPresenter {
      * Keeps track of whether a runtime configuration change ever
      * occurred.
      */
+    //is used for beg
     private boolean mConfigurationChangeOccurred;
 
     /**
@@ -224,6 +227,14 @@ public class PalantiriPresenter {
         // Generate beingCount number of threads that are stored in a
         // list and then start all the threads in the List.
         // TODO - You fill in here.
+        mBeingThreads = new ArrayList<Thread>();
+        for(int i =0; i < beingCount; i++){
+            Thread temp = new Thread(new BeingRunnable(this));
+            mBeingThreads.add(temp);
+        }
+        for(Thread j:mBeingThreads){
+            j.start();
+        }
     }
 
     /**
@@ -235,6 +246,22 @@ public class PalantiriPresenter {
         // Threads to finish and then calls mView.get().done() to
         // inform the View layer that the simulation is done.
         // TODO -- you fill in here.
+        Thread waits = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for(Thread j: mBeingThreads)
+                {
+                    try {
+                        j.join();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                mView.get().done();
+            }
+        });
+        waits.start();
+
     }
 
     /**
@@ -246,7 +273,9 @@ public class PalantiriPresenter {
         synchronized(this) {
             // Interrupt all the Threads.
             // TODO -- you fill in here.
-
+            for(Thread j:mBeingThreads){
+                j.interrupt();
+            }
             // Inform the user that we're shutting down the
             // simulation.
             mView.get().shutdownOccurred(mBeingThreads.size());

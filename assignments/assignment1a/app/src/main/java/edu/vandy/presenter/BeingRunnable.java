@@ -2,9 +2,12 @@ package edu.vandy.presenter;
 
 import android.util.Log;
 
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import edu.vandy.model.Palantir;
+import edu.vandy.model.PalantiriManager;
+import edu.vandy.model.PalantiriModel;
 import edu.vandy.utils.Options;
 import edu.vandy.utils.UiUtils;
 
@@ -101,7 +104,7 @@ public class BeingRunnable
     private boolean gazeIntoPalantir(int beingId) {
         // Return if PalantiriPresenter instructs us to stop gazing.
         // TODO -- replace "false" with the appropriate call.
-        if (false) {
+        if (Thread.interrupted()) {
             Log.d(TAG,
                   "Thread.interrupted() is true for Being "
                   + beingId
@@ -125,7 +128,14 @@ public class BeingRunnable
                 // succeeds, using a call to Utils.pauseThread() to
                 // avoid excessive "busy waiting".
                 // TODO -- you fill in here.
-
+                PalantiriModel myModel = mPresenter.getModel();
+                while(true){
+                    UiUtils.pauseThread(500);
+                    palantir = myModel.acquirePalantir();
+                    if(palantir != null){
+                        break;
+                    }
+                }
                 // Make sure we were supposed to get a Palantir.
                 if (!incrementGazingCountAndCheck(beingId, 
                                                   palantir))
@@ -164,6 +174,7 @@ public class BeingRunnable
                 // Return the Palantir back to PalantiriManager in the
                 // Model layer.
                 // TODO -- you fill in here.
+                mPresenter.getModel().releasePalantir(palantir);
             }
             return true;
         }
@@ -190,6 +201,13 @@ public class BeingRunnable
     private boolean incrementGazingCountAndCheck(int beingId,
                                                  Palantir palantir) {
         // TODO - You fill in here.
+        //mGazingThreads.incrementAndGet();
+        if(mGazingThreads.get() > Options.instance().numberOfPalantiri()){
+            mPresenter.mView.get().threadShutdown(beingId);
+            return false;
+        }
+        mGazingThreads.incrementAndGet();
+        return true;
     }
 
     /**
@@ -199,5 +217,6 @@ public class BeingRunnable
      */
     private void decrementGazingCount() {
         // TODO - You fill in here.
+        mGazingThreads.decrementAndGet();
     }
 }
